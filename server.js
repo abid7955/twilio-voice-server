@@ -31,6 +31,7 @@ app.get("/token", (req, res) => {
 });
 
 app.post("/voice", (req, res) => {
+  console.log("Incoming voice request", req.body); // Add this
   const toNumber = req.body.To;
   if (!toNumber) {
     return res.status(400).send("Missing 'To' number in request body");
@@ -43,6 +44,7 @@ app.post("/voice", (req, res) => {
   res.type("text/xml");
   res.send(twiml.toString());
 });
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
