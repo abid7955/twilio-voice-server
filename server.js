@@ -14,21 +14,26 @@ const apiSecret = process.env.TWILIO_API_SECRET;
 const outgoingAppSid = process.env.TWIML_APP_SID;
 
 // Optional root route
-app.get("/", (req, res) => {
-  res.send("Twilio Voice Server is running");
-});
-
-// Token generator
 app.get("/token", (req, res) => {
-  const identity = "user_" + Math.floor(Math.random() * 10000);
+  const identity = "user";
 
-  const AccessToken = twilio.jwt.AccessToken;
-  const VoiceGrant = AccessToken.VoiceGrant;
+  const token = new AccessToken(
+    twilioAccountSid,
+    twilioApiKey,
+    twilioApiSecret,
+    { identity }
+  );
 
   const voiceGrant = new VoiceGrant({
-    outgoingApplicationSid: outgoingAppSid,
-    incomingAllow: true,
+    outgoingApplicationSid: twilioAppSid,
+    incomingAllow: true
   });
+
+  token.addGrant(voiceGrant);
+
+  res.json({ token: token.toJwt() });
+});
+
 
   const token = new AccessToken(accountSid, apiKey, apiSecret);
   token.addGrant(voiceGrant);
