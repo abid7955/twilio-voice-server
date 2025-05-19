@@ -31,19 +31,25 @@ app.get("/token", (req, res) => {
 });
 
 app.post("/voice", (req, res) => {
-  console.log("Incoming voice request", req.body); // Add this
   const toNumber = req.body.To;
-  if (!toNumber) {
-    return res.status(400).send("Missing 'To' number in request body");
-  }
+
+  console.log("Incoming voice request", toNumber);
 
   const twiml = new VoiceResponse();
-  const dial = twiml.dial();
-  dial.number(toNumber);
+  const dial = twiml.dial({
+    callerId: process.env.TWILIO_CALLER_ID || '+918810377366'
+  });
 
-  res.type("text/xml");
+  if (toNumber) {
+    dial.number({}, toNumber);
+  } else {
+    twiml.say("Thanks for calling!");
+  }
+
+  res.type('text/xml');
   res.send(twiml.toString());
 });
+
 
 
 const PORT = process.env.PORT || 3000;
