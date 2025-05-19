@@ -7,26 +7,22 @@ app.use(cors());
 app.use(express.json());
 
 const VoiceResponse = twilio.twiml.VoiceResponse;
+const AccessToken = twilio.jwt.AccessToken;
+const VoiceGrant = AccessToken.VoiceGrant;
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const apiKey = process.env.TWILIO_API_KEY;
 const apiSecret = process.env.TWILIO_API_SECRET;
-const outgoingAppSid = process.env.TWIML_APP_SID;
+const outgoingAppSid = process.env.TWILIO_TWIML_APP_SID;
 
-// Optional root route
 app.get("/token", (req, res) => {
   const identity = "user";
 
-  const token = new AccessToken(
-    twilioAccountSid,
-    twilioApiKey,
-    twilioApiSecret,
-    { identity }
-  );
+  const token = new AccessToken(accountSid, apiKey, apiSecret, { identity });
 
   const voiceGrant = new VoiceGrant({
-    outgoingApplicationSid: twilioAppSid,
-    incomingAllow: true
+    outgoingApplicationSid: outgoingAppSid,
+    incomingAllow: true,
   });
 
   token.addGrant(voiceGrant);
@@ -34,22 +30,16 @@ app.get("/token", (req, res) => {
   res.json({ token: token.toJwt() });
 });
 
-
-  const token = new AccessToken(accountSid, apiKey, apiSecret);
-  token.addGrant(voiceGrant);
-  token.identity = identity;
-
-  res.send({
-    identity: identity,
-    token: token.toJwt(),
-  });
-});
-
-// Voice route
 app.post("/voice", (req, res) => {
+  const toNumber = req.body.To;
+  if (!toNumber) {
+    return res.status(400).send("Missing 'To' number in request body");
+  }
+
   const twiml = new VoiceResponse();
   const dial = twiml.dial();
-  dial.number(req.body.To); // This should come from the client
+  dial.number(toNumber);
+
   res.type("text/xml");
   res.send(twiml.toString());
 });
