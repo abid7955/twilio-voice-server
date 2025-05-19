@@ -1,35 +1,55 @@
-const express = require('express');
-const cors = require('cors');
-const twilio = require('twilio');
-require('dotenv').config();
+const express = require("express");
+const twilio = require("twilio");
+const cors = require("cors");
 
 const app = express();
 app.use(cors());
+app.use(express.json());
 
-const {
-  TWILIO_ACCOUNT_SID,
-  TWILIO_API_KEY,
-  TWILIO_API_SECRET,
-  TWILIO_TWIML_APP_SID
-} = process.env;
+const VoiceResponse = twilio.twiml.VoiceResponse;
 
-app.get('/token', (req, res) => {
-  const identity = "powerapps-user";
-  const token = new twilio.jwt.AccessToken(
-    TWILIO_ACCOUNT_SID,
-    TWILIO_API_KEY,
-    TWILIO_API_SECRET,
-    { identity }
-  );
-  const voiceGrant = new twilio.jwt.AccessToken.VoiceGrant({
-    outgoingApplicationSid: TWILIO_TWIML_APP_SID,
-    incomingAllow: true
-  });
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const apiKey = process.env.TWILIO_API_KEY;
+const apiSecret = process.env.TWILIO_API_SECRET;
+const outgoingAppSid = process.env.TWIML_APP_SID;
 
-  token.addGrant(voiceGrant);
-  res.send({ token: token.toJwt() });
+// Optional root route
+app.get("/", (req, res) => {
+  res.send("Twilio Voice Server is running");
 });
 
-app.listen(3000, () => {
-  console.log("Token service running on http://localhost:3000/token");
+// Token generator
+app.get("/token", (req, res) => {
+  const identity = "user_" + Math.floor(Math.random() * 10000);
+
+  const AccessToken = twilio.jwt.AccessToken;
+  const VoiceGrant = AccessToken.VoiceGrant;
+
+  const voiceGrant = new VoiceGrant({
+    outgoingApplicationSid: outgoingAppSid,
+    incomingAllow: true,
+  });
+
+  const token = new AccessToken(accountSid, apiKey, apiSecret);
+  token.addGrant(voiceGrant);
+  token.identity = identity;
+
+  res.send({
+    identity: identity,
+    token: token.toJwt(),
+  });
+});
+
+// Voice route
+app.post("/voice", (req, res) => {
+  const twiml = new VoiceResponse();
+  const dial = twiml.dial();
+  dial.number(req.body.To); // This should come from the client
+  res.type("text/xml");
+  res.send(twiml.toString());
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
