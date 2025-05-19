@@ -33,7 +33,7 @@ app.get("/token", (req, res) => {
 app.post("/voice", (req, res) => {
   const toNumber = req.body.To;
 
-  console.log("Incoming voice request", toNumber);
+  console.log("Incoming voice request", req.body);
 
   const twiml = new VoiceResponse();
   const dial = twiml.dial({
